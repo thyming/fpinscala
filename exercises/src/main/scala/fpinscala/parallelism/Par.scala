@@ -140,12 +140,21 @@ object Examples {
   }
 
   def parMax(values: IndexedSeq[Int]): Option[Int] = {
-    val maxOp = (opt: Option[Int], i: Int) => Some(opt.map(math.max(_,i)).getOrElse(i))
-    val combOp = (o1: Option[Int], o2: Option[Int]) => for {
-      i1 <- o1
-      i2 <- o2
-    } yield math.max(i1, i2)
-    fold[Int,Option[Int]](None, values)(maxOp, combOp)
+    fold[Int,Option[Int]](None, values) (
+      (opt, i) => Some(opt.map(math.max(_,i)).getOrElse(i)),
+      (o1, o2) => for {
+        i1 <- o1
+        i2 <- o2
+      } yield math.max(i1, i2)
+    )
+  }
+
+  def parTotalWords(grafs: List[String]): Int = {
+    val seqGrafs = grafs.toIndexedSeq
+    fold[String,Int](0, seqGrafs)(
+      (cnt, graf) => cnt + graf.split(" ").length,
+      _ + _
+    )
   }
 
 }
