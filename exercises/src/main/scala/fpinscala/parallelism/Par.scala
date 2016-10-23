@@ -125,4 +125,27 @@ object Examples {
       sum(l) + sum(r) // Recursively sum both halves and add the results together.
     }
 
+  def fold[A,B](z: B, values: IndexedSeq[A])
+               (itemOperator: (B,A) => B, combineOperator: (B, B) => B)
+               (implicit es: ExecutorService): B = {
+
+    if (values.size <= 1) {
+      values.headOption.map(itemOperator(z,_)).getOrElse(z)
+    } else {
+      val (l,r) = values.splitAt(values.length/2)
+      val asyncFold = asyncF(fold(z, _: IndexedSeq[A])(itemOperator, combineOperator))
+      map2(fork(asyncFold(l)), fork(asyncFold(r)))((ls,rs) => combineOperator(ls, rs))(es).get()
+    }
+
+  }
+
+  def parMax(values: IndexedSeq[Int]): Option[Int] = {
+    val maxOp = (opt: Option[Int], i: Int) => Some(opt.map(math.max(_,i)).getOrElse(i))
+    val combOp = (o1: Option[Int], o2: Option[Int]) => for {
+      i1 <- o1
+      i2 <- o2
+    } yield math.max(i1, i2)
+    fold[Int,Option[Int]](None, values)(maxOp, combOp)
+  }
+
 }
