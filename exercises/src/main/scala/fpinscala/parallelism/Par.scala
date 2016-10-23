@@ -101,6 +101,11 @@ object Par {
     ps.foldRight[Par[List[A]]](unit(List[A]()))((pa, pla) => map2Timeout(pa, pla)(_ :: _))
   }
 
+  def parFilter[A](as: List[A])(f: A => Boolean): Par[List[A]] = fork {
+    val aps = as.map(asyncF(a => if (f(a)) List(a) else List()))
+    map(sequence(aps))(_.flatten)
+  }
+
   /* Gives us infix syntax for `Par`. */
   implicit def toParOps[A](p: Par[A]): ParOps[A] = new ParOps(p)
 
